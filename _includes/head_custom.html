@@ -1,0 +1,29 @@
+<link rel="stylesheet" href="{{ '/assets/css/prism.css' | relative_url }}">
+<script src="{{ '/assets/js/prism.js' | relative_url }}"></script>
+
+<script>
+  window['_mMarkdownCopyText'] = (id) => {
+    const contentEl = document.getElementById(id);
+    const copyBtn = contentEl.parentElement.getElementsByClassName('copy-button')[0];
+
+    const tf = document.createElement("textarea");
+    tf.value = contentEl.textContent;
+    document.body.appendChild(tf);
+
+    tf.select();
+    tf.setSelectionRange(0, 100_000);
+
+    navigator.clipboard.writeText(tf.value);
+
+    document.body.removeChild(tf);
+
+    const [first, second] = Array.from(copyBtn.children);
+    first.setAttribute('hidden', 'true');
+    second.removeAttribute('hidden');
+
+    setTimeout(() => {
+      first.removeAttribute('hidden');
+      second.setAttribute('hidden', 'true');
+    }, 1000);
+  };
+</script>

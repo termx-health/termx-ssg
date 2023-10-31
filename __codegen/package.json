@@ -1,0 +1,17 @@
+{
+  "name": "codegen",
+  "version": "1.0.0",
+  "dependencies": {
+    "@kodality-web/marina-markdown-parser": "^15.0.0-snapshot",
+    "jsdom": "^22.1.0"
+  },
+  "scripts": {
+    "generate": "node src/generate.js",
+    "sync": "npx tsc && node dist/sync.js",
+    "magic": "npm run sync && npm run generate"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.9",
+    "typescript": "^5.2.2"
+  }
+}

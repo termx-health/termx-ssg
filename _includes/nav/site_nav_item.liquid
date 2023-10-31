@@ -1,0 +1,30 @@
+{% comment %}
+{% endcomment %}
+
+{%- assign nav_pages = include.pages -%}
+{%- assign lang = include.language -%}
+
+<ul class="nav-list">
+  {%- for pg in nav_pages -%}
+    {% assign node = pg.contents | where: 'lang', lang | first %}
+    <li class="nav-list-item">
+      {%- if pg.children -%}
+        <button class="nav-list-expander btn-reset" aria-label="toggle items in {{ node.title }} category" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <use xlink:href="#svg-arrow-right"></use>
+          </svg>
+        </button>
+      {%- endif -%}
+
+      {% if node %}
+        <a href="/{{ node.lang }}/{{ node.slug }}" class="nav-list-link">{{ node.name }}</a>
+      {% else %}
+        {% assign first_node = pg.contents | first %}
+        <a href="/{{ first_node.lang }}/{{ first_node.slug }}" class="nav-list-link nav-list-link__alternative">{{ first_node.name }}
+          <span class="nav-list-link__lang">{{ first_node.lang }}</span></a>
+      {% endif %}
+
+      {% include nav/site_nav_item.liquid pages=pg.children language=lang %}
+    </li>
+  {%- endfor -%}
+</ul>

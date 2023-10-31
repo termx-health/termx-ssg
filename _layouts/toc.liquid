@@ -1,0 +1,18 @@
+---
+layout: default
+---
+
+<h4>Table of contents</h4>
+
+<table>
+  {% assign local = site.wiki | where: 'language', page.language | where_exp: 'item', "item.slug != 'index'" %}
+  {% for post in local %}
+    <tr>
+      <td>{{ post.slug }}</td>
+      <td>
+        <a href="{{ post.url }}">{{ post.url }}</a>
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+

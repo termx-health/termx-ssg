@@ -6,3 +6,11 @@ vendor
 
 
 .idea
+_ig
+assets/files
+_wiki
+_data
+__codegen/sources
+**/dist
+**/node_modules
+

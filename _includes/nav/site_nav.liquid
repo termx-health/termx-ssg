@@ -1,0 +1,18 @@
+<nav aria-label="Main" id="site-nav" class="site-nav">
+  {% include nav/site_nav_item.liquid pages=include.pages language=include.language %}
+</nav>
+
+
+<footer class="site-footer">
+  <div style="display: flex; gap: 0.5rem">
+    {% assign langs = site.wiki | map: 'language' | uniq | sort_natural %}
+    {%- for lang in langs -%}
+      {% if lang == include.language %}
+        <span>{{ lang }}</span>
+      {% else %}
+        <a href="/{{ lang }}">{{ lang }}</a>
+      {% endif %}
+    {%- endfor -%}
+  </div>
+
+</footer>
