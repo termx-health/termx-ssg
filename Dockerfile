@@ -8,4 +8,6 @@ RUN echo 'export PATH="$HOME/gems/bin:$PATH"' >> ~/.bashrc
 RUN . ~/.bashrc
 RUN gem install bundler
 
-COPY ./ ./__codegen
+COPY _generate.sh ./_generate.sh
+COPY __codegen ./__codegen
+COPY template/ ./template

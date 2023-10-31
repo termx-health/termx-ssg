@@ -16,47 +16,56 @@ const _TARGET_WIKI = `${_TARGET_FOLDER}/_wiki`;
 const _TARGET_ASSETS = `${_TARGET_FOLDER}/assets`;
 
 
+function readIndex() {
+  const indexJson = fileRead(`${_ROOT_FOLDER}/index.json`);
+  return JSON.parse(indexJson);
+}
+
+function getPages(index) {
+  const flatten = (pages) => pages?.flatMap(p => [p, ...flatten(p.children)]) ?? []
+  return flatten(index.tree);
+}
+
+function getUniqueContentLanguages(pages) {
+  return pages
+    .flatMap(p => p['contents'])
+    .map(c => c['lang'])
+    .filter((value, index, self) => self.indexOf(value) === index);
+}
+
 async function main() {
   console.time();
   // initialize MarkdownParser
   const mdParser = await parser.build()
 
+  // STEP 1:
   // read file index
-  const indexJson = fileRead(`${_ROOT_FOLDER}/index.json`);
-  const index = JSON.parse(indexJson)
-
-  const flatten = (pages) => pages?.flatMap(p => [p, ...flatten(p.children)]) ?? []
-  const pages = flatten(index.tree);
-
+  const index = readIndex();
+  const pages = getPages(index);
 
   // check '_data' folder
   folderCheck(`${_TARGET_DATA}`)
-  fileWrite(`${_TARGET_DATA}/index.json`, indexJson);
+  fileWrite(`${_TARGET_DATA}/index.json`, JSON.stringify(index, null, 2));
 
 
-  const uniqueLangs = pages
-    .flatMap(p => p['contents'])
-    .map(c => c['lang'])
-    .filter((value, index, self) => self.indexOf(value) === index);
-
-
+  // STEP 2:
   // check '_wiki' folder
   folderCheck(`${_TARGET_WIKI}`)
 
   // create index files for language root folders
-  uniqueLangs.forEach(lang => {
-    const frontMatter =
+  getUniqueContentLanguages(pages).forEach(lang => {
+    // check '_wiki/(en|**)' folder
+    folderCheck(`${_TARGET_WIKI}/${lang}`);
+    fileWrite(`${_TARGET_WIKI}/${lang}/index.html`, '' +
       '---\n' +
       `title: ${lang} index\n` +
       `language: ${lang}\n` +
       'layout: toc\n' +
-      '---\n';
-
-    // check '_wiki/(en|**)' folder
-    folderCheck(`${_TARGET_WIKI}/${lang}`);
-    fileWrite(`${_TARGET_WIKI}/${lang}/index.html`, frontMatter);
+      '---\n'
+    );
   })
 
+  // save pages into
   for (const pageDef of pages) {
     for (const content of pageDef['contents']) {
       const {frontMatter, pageContent, extension} = await handlePage(pageDef, content);
