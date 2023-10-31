@@ -2,12 +2,13 @@
 
 ### File Structure
 
-Put file(s) into `__source` folder
+Place the file(s) into the `__source` folder.
 
-1. `__source/pages` contains `*.(md|html)` source files
-1. `__source/attachment` contains assets (optional)
-1. `__source` root contains the `index.json` file
+1. `__source/pages` contains `*.(md|html)` source files.
+2. `__source/attachment` contains assets (optional).
+3. `__source` root contains the `index.json` file.
 
+**Directory Structure:**
 ```
 ├── __source
 │   ├── attachments
@@ -19,8 +20,7 @@ Put file(s) into `__source` folder
 └── ...
 ```
 
-_index.json example_
-
+_Example of `index.json` file:_
 ```json
 {
   "space": "demo",
@@ -41,25 +41,25 @@ _index.json example_
 }
 ```
 
-### Populate Template
+### Populating the Template
 
-Navigate to `__codegen` folder and install node modules
+Navigate to the `__codegen` folder and install the required Node modules:
 
 ```shell
 npm i
-````
+```
 
-Run the generation command
+Run the generation command:
 
 ```shell
 node generate.js
 ```
 
-Navigate to `template` folder to see the population result
+Navigate to the `template` folder to view the populated result.
 
-### Serve Static Site
+### Serving the Static Site
 
-In the `template` folder run the following commands:
+In the `template` folder, run the following commands:
 
 ```sh
 bundle install
@@ -71,15 +71,15 @@ bundle exec jekyll serve
 
 ## `__codegen`
 
-This folder contains scripts necessary for template population.
+This folder contains the scripts necessary for template population.
 
-`generate.js` file reads data from `__source` folder, transforms it, and writes into `template` folder.
+The `generate.js` file reads data from the `__source` folder, transforms it, and writes it into the `template` folder.
 
-It utilizes the same Markdown parser as in TermX web, although they may be some minor changes.
+It utilizes the same Markdown parser as in TermX web, although there may be some minor changes.
 
-## Docker Jekyll Site builder
+## Docker Jekyll Site Builder
 
-In the `__codegen` folder run the following command:
+In the `__codegen` folder, run the following command:
 
 ```shell
 docker build -t docker.kodality.com/termx-jekyll-builder:latest .
