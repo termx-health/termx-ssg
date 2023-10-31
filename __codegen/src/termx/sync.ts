@@ -1,5 +1,5 @@
 import fs from 'fs';
-import {Page, PageAttachment, PageLink, SearchResult, Space} from './models';
+import {LocalizedName, Page, PageAttachment, PageLink, SearchResult, Space} from './models';
 
 
 if (!process.cwd().endsWith("__codegen")) {
@@ -8,7 +8,7 @@ if (!process.cwd().endsWith("__codegen")) {
 
 
 interface FileIndex {
-  space: string,
+  space: LocalizedName,
   tree: FileDefinition[]
 }
 
@@ -173,7 +173,7 @@ HttpClient.build().then(async http => {
     .sort((p1, p2) => links[p1.id].orderNumber - links[p2.id].orderNumber);
 
   const fileIndex: FileIndex = {
-    space: space.code,
+    space: space.names,
     tree: buildPages(0, collect(pagesSorted, p => p.links?.length ? p.links[0].sourceId : 0))
   }
 

@@ -1,3 +1,7 @@
+export interface LocalizedName {
+  [key: string]: string;
+}
+
 export interface SearchResult<T> {
   data: T[]
   meta?: {
@@ -9,6 +13,7 @@ export interface SearchResult<T> {
 
 export class Space {
   public code?: string;
+  public names?: LocalizedName;
 }
 
 export class Page {
