@@ -1,6 +1,11 @@
 # TermX SSG
 
-### File Structure
+## File Structure
+
+- `__codegen` - template population utility
+- `template` - Jekyll template
+
+## Setting up the source files
 
 Place the file(s) into the `__source` folder.
 
@@ -9,6 +14,7 @@ Place the file(s) into the `__source` folder.
 3. `__source` root contains the `index.json` file.
 
 **Directory Structure:**
+
 ```
 ├── __source
 │   ├── attachments
@@ -21,6 +27,7 @@ Place the file(s) into the `__source` folder.
 ```
 
 _Example of `index.json` file:_
+
 ```json
 {
   "space": "demo",
@@ -41,7 +48,7 @@ _Example of `index.json` file:_
 }
 ```
 
-### Populating the Template
+## Populating the Template
 
 Navigate to the `__codegen` folder and install the required Node modules:
 
@@ -57,7 +64,7 @@ node generate.js
 
 Navigate to the `template` folder to view the populated result.
 
-### Serving the Static Site
+## Serving the Static Site
 
 In the `template` folder, run the following commands:
 
@@ -69,7 +76,7 @@ bundle install
 bundle exec jekyll serve
 ```
 
-## `__codegen`
+## __codegen
 
 This folder contains the scripts necessary for template population.
 
