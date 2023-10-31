@@ -1,9 +1,11 @@
-# TermX Experimental SSG
+# TermX SSG
+
+### File Structure
 
 Put file(s) into `__source` folder
 
-1. `__source/pages` contains source `*.(md|html)` files
-1. `__source/attachment` contains attachments/assets (optional)
+1. `__source/pages` contains `*.(md|html)` source files
+1. `__source/attachment` contains assets (optional)
 1. `__source` root contains the `index.json` file
 
 ```
@@ -39,19 +41,25 @@ _index.json example_
 }
 ```
 
-Navigate to `__codegen` folder and install node modules, if missing
+### Populate Template
+
+Navigate to `__codegen` folder and install node modules
+
 ```shell
 npm i
-```
+````
 
 Run the generation command
+
 ```shell
 node generate.js
 ```
 
-Look output in the `template` folder
+Navigate to `template` folder to see the population result
 
+### Serve Static Site
 
+In the `template` folder run the following commands:
 
 ```sh
 bundle install
@@ -61,21 +69,18 @@ bundle install
 bundle exec jekyll serve
 ```
 
+## `__codegen`
 
+This folder contains scripts necessary for template population.
 
+`generate.js` file reads data from `__source` folder, transforms it, and writes into `template` folder.
 
+It utilizes the same Markdown parser as in TermX web, although they may be some minor changes.
 
+## Docker Jekyll Site builder
 
-## Docker
+In the `__codegen` folder run the following command:
 
 ```shell
 docker build -t docker.kodality.com/termx-jekyll-builder:latest .
 ```
-
-```shell
-this="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-
-docker run --rm -it -v $this:/template  \
-  docker.kodality.com/termx-jekyll-builder /bin/bash -c "chmod -R 777 ./_generate.sh && ./_generate.sh"
-```
-

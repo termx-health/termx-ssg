@@ -1,6 +1,4 @@
-const path = require("path");
 const fs = require("fs");
-
 if (!process.cwd().endsWith("__codegen")) {
   throw Error(`invalid cwd: ${process.cwd()}`)
 }
