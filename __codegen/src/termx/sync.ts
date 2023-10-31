@@ -126,7 +126,7 @@ HttpClient.build().then(async http => {
 
 
   // check temp folder existance
-  const SOURCE_FOLDER = './sources';
+  const SOURCE_FOLDER = '../__source';
   folderCheck(`${SOURCE_FOLDER}`);
 
 

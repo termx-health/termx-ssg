@@ -14,7 +14,8 @@ const fileWrite = (p, file) => fs.writeFileSync(p, file, 'utf-8');
 const fileMove = (pOld, pNew) => fs.renameSync(pOld, pNew);
 const fileRemove = (p) => fs.rmSync(p, {recursive: true});
 
-const _ROOT_FOLDER = `/../sources`;
+const _ROOT_FOLDER = `../__source`;
+const _TARGET_FOLDER = '../template/'
 const _TMP = '_tmp';
 
 
@@ -24,7 +25,7 @@ async function main() {
   const mdParser = await parser.build()
 
   // read file index
-  const indexJson = fileRead(`${location}${_ROOT_FOLDER}/index.json`);
+  const indexJson = fileRead(`${_ROOT_FOLDER}/index.json`);
   const index = JSON.parse(indexJson)
 
   const flatten = (pages) => pages?.flatMap(p => [p, ...flatten(p.children)]) ?? []
@@ -53,7 +54,7 @@ async function main() {
 
   async function handlePage(pageDef, content) {
     let extension = content['contentType'] === 'markdown' ? 'md' : 'html';
-    let pageContent = fileRead(`${location}${_ROOT_FOLDER}/pages/${content['slug']}.${extension}`);
+    let pageContent = fileRead(`${_ROOT_FOLDER}/pages/${content['slug']}.${extension}`);
 
     const frontMatter =
       '---\n' +
@@ -94,20 +95,30 @@ async function main() {
       fileWrite(`./${_TMP}/${lang}/index.html`, frontMatter);
     })
 
-
   // STEP (_data): move index.json to '_data' folder
-  folderCheck(`../_data`)
-  fileMove(`./${_TMP}/index.json`, `../_data/index.json`)
+  try {
+    folderCheck(`${_TARGET_FOLDER}/_data`)
+    fileMove(`./${_TMP}/index.json`, `${_TARGET_FOLDER}/_data/index.json`)
+  } catch (e) {
+    console.log("Failed to copy index!", e);
+  }
 
   // STEP (assets): copy assets
-  folderCheck('../assets')
-  folderCopy(`${location}${_ROOT_FOLDER}/attachments`, '../assets/files')
+  try {
+    folderCheck(`${_TARGET_FOLDER}/assets`)
+    folderCopy(`${_ROOT_FOLDER}/attachments`, `${_TARGET_FOLDER}/assets/files`)
+  } catch (e) {
+    console.log("Failed to copy assets!", e);
+  }
 
   // STEP (_wiki): move '_tmp' folder w/out index.json to '_wiki' folder
-  folderCheck(`../_wiki`)
-  fileRemove(`../_wiki`);
-  fileMove(`./${_TMP}`, `../_wiki`)
-
+  try {
+    folderCheck(`${_TARGET_FOLDER}/_wiki`)
+    fileRemove(`${_TARGET_FOLDER}/_wiki`);
+    fileMove(`./${_TMP}`, `${_TARGET_FOLDER}/_wiki`)
+  } catch (e) {
+    console.log("Failed to copy pages!", e);
+  }
   console.timeEnd();
 }
 

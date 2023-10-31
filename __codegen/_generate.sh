@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd ssg/
+cd src/
 
 cd __codegen
 npm i
