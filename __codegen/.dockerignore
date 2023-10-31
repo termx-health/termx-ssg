@@ -1,3 +1,4 @@
+dist
 node_modules
-Dockerfile
 src/termx
+Dockerfile

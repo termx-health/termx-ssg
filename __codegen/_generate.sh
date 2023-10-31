@@ -1,12 +1,17 @@
 #!/bin/bash
+RED='\033[0;32m'
 
-cd src/
 
 cd __codegen
+
+printf "${RED}Installing NPM modules\n"
 npm i
-npm run sync
+
+printf "${RED}Running template generation\n"
 npm run generate
 cd -
 
+printf "${RED}Generating the Jekyll site\n"
+cd template
 bundle install
 jekyll build

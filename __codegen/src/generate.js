@@ -1,6 +1,5 @@
 const path = require("path");
 const fs = require("fs");
-const location = path.join(__dirname);
 
 if (!process.cwd().endsWith("__codegen")) {
   throw Error(`invalid cwd: ${process.cwd()}`)
@@ -11,12 +10,12 @@ const folderCheck = p => !fs.existsSync(p) && fs.mkdirSync(p)
 const folderCopy = (src, dest) => fs.cpSync(src, dest, {recursive: true});
 const fileRead = (p) => String(fs.readFileSync(p))
 const fileWrite = (p, file) => fs.writeFileSync(p, file, 'utf-8');
-const fileMove = (pOld, pNew) => fs.renameSync(pOld, pNew);
-const fileRemove = (p) => fs.rmSync(p, {recursive: true});
 
 const _ROOT_FOLDER = `../__source`;
-const _TARGET_FOLDER = '../template/'
-const _TMP = '_tmp';
+const _TARGET_FOLDER = '../template'
+const _TARGET_DATA = `${_TARGET_FOLDER}/_data`;
+const _TARGET_WIKI = `${_TARGET_FOLDER}/_wiki`;
+const _TARGET_ASSETS = `${_TARGET_FOLDER}/assets`;
 
 
 async function main() {
@@ -32,18 +31,40 @@ async function main() {
   const pages = flatten(index.tree);
 
 
-  // check '_tmp' folder
-  folderCheck(`./${_TMP}`)
-  fileWrite(`./${_TMP}/index.json`, indexJson);
+  // check '_data' folder
+  folderCheck(`${_TARGET_DATA}`)
+  fileWrite(`${_TARGET_DATA}/index.json`, indexJson);
 
-  // CONTENT TRANSFORMATION
+
+  const uniqueLangs = pages
+    .flatMap(p => p['contents'])
+    .map(c => c['lang'])
+    .filter((value, index, self) => self.indexOf(value) === index);
+
+
+  // check '_wiki' folder
+  folderCheck(`${_TARGET_WIKI}`)
+
+  // create index files for language root folders
+  uniqueLangs.forEach(lang => {
+    const frontMatter =
+      '---\n' +
+      `title: ${lang} index\n` +
+      `language: ${lang}\n` +
+      'layout: toc\n' +
+      '---\n';
+
+    // check '_wiki/(en|**)' folder
+    folderCheck(`${_TARGET_WIKI}/${lang}`);
+    fileWrite(`${_TARGET_WIKI}/${lang}/index.html`, frontMatter);
+  })
+
   for (const pageDef of pages) {
     for (const content of pageDef['contents']) {
       const {frontMatter, pageContent, extension} = await handlePage(pageDef, content);
-      // check language folder
-      folderCheck(`./${_TMP}/${content['lang']}`)
-      // save page content in '_tmp'
-      fileWrite(`./${_TMP}/${content['lang']}/${content['slug']}.${extension}`,
+
+      // save page content in '_wiki/(en|**)' folder
+      fileWrite(`${_TARGET_WIKI}/${content['lang']}/${content['slug']}.${extension}`,
         frontMatter +
         '\n{% raw %}\n' +
         pageContent +
@@ -80,45 +101,14 @@ async function main() {
   }
 
 
-  // create index files for language root folders
-  pages
-    .flatMap(p => p['contents'])
-    .map(c => c['lang'])
-    .filter((value, index, self) => self.indexOf(value) === index)
-    .forEach(lang => {
-      const frontMatter =
-        '---\n' +
-        `title: ${lang} index\n` +
-        `language: ${lang}\n` +
-        'layout: toc\n' +
-        '---\n';
-      fileWrite(`./${_TMP}/${lang}/index.html`, frontMatter);
-    })
-
-  // STEP (_data): move index.json to '_data' folder
-  try {
-    folderCheck(`${_TARGET_FOLDER}/_data`)
-    fileMove(`./${_TMP}/index.json`, `${_TARGET_FOLDER}/_data/index.json`)
-  } catch (e) {
-    console.log("Failed to copy index!", e);
-  }
-
   // STEP (assets): copy assets
   try {
-    folderCheck(`${_TARGET_FOLDER}/assets`)
-    folderCopy(`${_ROOT_FOLDER}/attachments`, `${_TARGET_FOLDER}/assets/files`)
+    folderCheck(`${_TARGET_ASSETS}`)
+    folderCopy(`${_ROOT_FOLDER}/attachments`, `${_TARGET_ASSETS}/files`)
   } catch (e) {
     console.log("Failed to copy assets!", e);
   }
 
-  // STEP (_wiki): move '_tmp' folder w/out index.json to '_wiki' folder
-  try {
-    folderCheck(`${_TARGET_FOLDER}/_wiki`)
-    fileRemove(`${_TARGET_FOLDER}/_wiki`);
-    fileMove(`./${_TMP}`, `${_TARGET_FOLDER}/_wiki`)
-  } catch (e) {
-    console.log("Failed to copy pages!", e);
-  }
   console.timeEnd();
 }
 

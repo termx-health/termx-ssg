@@ -9,5 +9,3 @@ RUN . ~/.bashrc
 RUN gem install bundler
 
 COPY ./ ./__codegen
-RUN mv ./__codegen/_generate.sh ./
-
