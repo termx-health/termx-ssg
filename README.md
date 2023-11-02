@@ -14,7 +14,7 @@ Place the file(s) into the `__source` folder.
 1. `__source` root contains the `pages.json` with pages structure.
 1. `__source` root contains the `space.json` with space definition.
 
-**Directory Structure:**
+**Directory Structure**
 
 ```
 ├── __source
@@ -28,7 +28,7 @@ Place the file(s) into the `__source` folder.
 └── ...
 ```
 
-_Example of `pages.json` file:_
+_Example of `pages.json` file_
 
 ```json
 [
@@ -47,6 +47,8 @@ _Example of `pages.json` file:_
 ]
 ```
 
+_Example of `space.json` file_
+
 ```json
 {
   "code": "termx-demo",
@@ -58,13 +60,13 @@ _Example of `pages.json` file:_
 
 ## Populating the Template
 
-Navigate to the `__codegen` folder and install the required Node modules:
+Navigate to the `__codegen` folder and install the required Node modules
 
 ```shell
 npm i
 ```
 
-Run the generation command:
+Run the generation command
 
 ```shell
 node generate.js
@@ -74,7 +76,7 @@ Navigate to the `template` folder to view the populated result.
 
 ## Serving the Static Site
 
-In the `template` folder, run the following commands:
+In the `template` folder, run the following commands
 
 ```sh
 bundle install
@@ -90,11 +92,11 @@ This folder contains the scripts necessary for template population.
 
 The `generate.js` file reads data from the `__source` folder, transforms it, and writes it into the `template` folder.
 
-It utilizes the same Markdown parser as in TermX web, although there may be some minor changes.
+It utilizes the same Markdown parser as in TermX application, although there may be some minor changes.
 
 ## Docker Jekyll Site Builder
 
-In the `__codegen` folder, run the following command:
+Run the following command in the root folder
 
 ```shell
 docker build -t docker.kodality.com/termx-jekyll-builder:latest .
