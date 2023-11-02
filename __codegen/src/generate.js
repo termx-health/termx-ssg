@@ -109,7 +109,8 @@ async function main() {
   }
 
 
-  // STEP (assets): copy assets
+  // STEP 3:
+  // copy assets
   try {
     folderCheck(`${_TARGET_ASSETS}`)
     folderCopy(`${_ROOT_FOLDER}/attachments`, `${_TARGET_ASSETS}/files`)

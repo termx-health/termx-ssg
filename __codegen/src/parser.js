@@ -59,7 +59,7 @@ async function localImage(md) {
 async function drawioPlugin(md) {
   const _matchSection = await matchSection();
 
-  md.renderer.rules.drawio = (tokens, idx, /*options, env, self */) => {
+  md.renderer.rules.drawio = (tokens, idx, /* options, env, self */) => {
     const [base64] = tokenAttrValue(tokens[idx], 'data');
     return `<div><img class="drawio" src="data:image/svg+xml;base64, ${base64}"></div>`;
   };

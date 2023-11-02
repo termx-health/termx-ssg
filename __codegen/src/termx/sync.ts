@@ -7,29 +7,9 @@ if (!process.cwd().endsWith("__codegen")) {
 }
 
 
-interface FileIndex {
-  space: Space,
-  tree: FileDefinition[]
-}
-
-interface FileDefinition {
-  code: string,
-  contents: {
-    name: string,
-    slug: string,
-    lang: string,
-    contentType?: 'markdown' | 'html',
-    modifiedAt?: Date
-  }[],
-  children?: FileDefinition[]
-}
-
-
 // utils
 const folderCheck = p => !fs.existsSync(p) && fs.mkdirSync(p)
-const fileWrite = (p, file) => {
-  fs.writeFileSync(p, file, 'utf-8');
-};
+const fileWrite = (p, file) => fs.writeFileSync(p, file, 'utf-8');
 
 function group<K extends string | number | symbol, V, R = V>(
   array: V[],
@@ -172,17 +152,15 @@ HttpClient.build().then(async http => {
     .sort((p1, p2) => p1.id - p2.id)
     .sort((p1, p2) => links[p1.id].orderNumber - links[p2.id].orderNumber);
 
-  const fileIndex: FileIndex = {
-    space: space,
-    tree: buildPages(0, collect(pagesSorted, p => p.links?.length ? p.links[0].sourceId : 0))
-  }
+  const spaceIndex: SpaceIndex = {code: space.code, names: space.names};
+  const pageIndex: PageIndex = buildPages(0, collect(pagesSorted, p => p.links?.length ? p.links[0].sourceId : 0))
 
-  fileWrite(`${SOURCE_FOLDER}/space.json`, JSON.stringify(fileIndex.space, null, 2));
-  fileWrite(`${SOURCE_FOLDER}/pages.json`, JSON.stringify(fileIndex.tree, null, 2));
+  fileWrite(`${SOURCE_FOLDER}/space.json`, JSON.stringify(spaceIndex, null, 2));
+  fileWrite(`${SOURCE_FOLDER}/pages.json`, JSON.stringify(pageIndex, null, 2));
 }).then(() => console.timeEnd())
 
 
-const buildPages = (parent: number, allPages: Record<number, Page[]>): FileDefinition[] => {
+const buildPages = (parent: number, allPages: Record<number, Page[]>): PageDefinition[] => {
   return !allPages[parent] ? null : allPages[parent].map(p => ({
     code: p.code,
     contents: p.contents

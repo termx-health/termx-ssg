@@ -1,39 +1,29 @@
-# TermX SSG
-
-## File Structure
-
-- `__codegen` - template population utility
-- `template` - Jekyll template
-
 ## Setting up the source files
 
-Place the file(s) into the `__source` folder.
-
-1. `__source/pages` contains `*.(md|html)` source files.
-1. `__source/attachment` contains assets (optional).
-1. `__source` root contains the `pages.json` with pages structure.
-1. `__source` root contains the `space.json` with space definition.
-
-**Directory Structure**
+Place files into the `__source` folder.
 
 ```
 ├── __source
-│   ├── attachments
+│   ├── attachments (optional)
 │   │   └── 101 (page ID)
-│   │       └── **.(png|jpg|jpeg)
+│   │       └── **.(png|jpg|jpeg|**)
 │   ├── pages
 │   │   └── **.(md|html) 
-│   ├── space.json
-│   └── pages.json
+│   ├── pages.json (source files structure)
+│   └── space.json (space definition)
 └── ...
 ```
+
+## Types
+
+**`__codegen/src/types.ts`**
 
 _Example of `pages.json` file_
 
 ```json
 [
   {
-    "code": "66ef0be7-c25e-4d5d-a63a-4f9abb071cd3",
+    "code": "can-be-whatever-you-want",
     "contents": [
       {
         "name": "Page A",
@@ -51,16 +41,24 @@ _Example of `space.json` file_
 
 ```json
 {
-  "code": "termx-demo",
+  "code": "ssg-demo",
   "names": {
-    "en": "TermX Demo"
+    "en": "SSG Demo"
   }
 }
 ```
 
+## __codegen
+
+This folder contains the scripts necessary for template population.
+
+The `generate.js` file reads data from the `__source` folder, transforms it, and writes it into the `template` folder.
+
+It utilizes the same Markdown parser as in TermX application, although there may be some minor changes.
+
 ## Populating the Template
 
-Navigate to the `__codegen` folder and install the required Node modules
+Navigate to the `__codegen` folder and install required Node modules
 
 ```shell
 npm i
@@ -86,23 +84,23 @@ bundle install
 bundle exec jekyll serve
 ```
 
-## __codegen
+## GitHub actions
 
-This folder contains the scripts necessary for template population.
+### Docker Image
 
-The `generate.js` file reads data from the `__source` folder, transforms it, and writes it into the `template` folder.
-
-It utilizes the same Markdown parser as in TermX application, although there may be some minor changes.
-
-## Docker Jekyll Site Builder
-
-Run the following command in the root folder
+Run the following command in the root folder to build Docker image for static site generation in GitHub Actions
 
 ```shell
 docker build -t docker.kodality.com/termx-jekyll-builder:latest .
 ```
 
-## Github Actions
+### Setup
+
+In your GitHub repository, create a `__source` folder and a `.github/workflows/jekyll-docker.yml` file.
+
+The `__source` folder should contain files using the structure described earlier.
+
+*.github/workflows/jekyll-docker.yml*
 
 ```yaml
 name: SSG
@@ -110,7 +108,6 @@ name: SSG
 on:
   push:
     branches: [ "main" ]
-
 
 jobs:
   build:
@@ -128,4 +125,5 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: _site
-          path: _site/**```
+          path: _site/**
+```
