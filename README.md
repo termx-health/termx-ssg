@@ -10,8 +10,9 @@
 Place the file(s) into the `__source` folder.
 
 1. `__source/pages` contains `*.(md|html)` source files.
-2. `__source/attachment` contains assets (optional).
-3. `__source` root contains the `index.json` file.
+1. `__source/attachment` contains assets (optional).
+1. `__source` root contains the `pages.json` with pages structure.
+1. `__source` root contains the `space.json` with space definition.
 
 **Directory Structure:**
 
@@ -22,29 +23,36 @@ Place the file(s) into the `__source` folder.
 │   │       └── **.(png|jpg|jpeg)
 │   ├── pages
 │   │   └── **.(md|html) 
-│   └── index.json
+│   ├── space.json
+│   └── pages.json
 └── ...
 ```
 
-_Example of `index.json` file:_
+_Example of `pages.json` file:_
+
+```json
+[
+  {
+    "code": "66ef0be7-c25e-4d5d-a63a-4f9abb071cd3",
+    "contents": [
+      {
+        "name": "Page A",
+        "slug": "page-a",
+        "lang": "en",
+        "ct": "markdown"
+      }
+    ],
+    "children": []
+  }
+]
+```
 
 ```json
 {
-  "space": "demo",
-  "tree": [
-    {
-      "code": "66ef0be7-c25e-4d5d-a63a-4f9abb071cd3",
-      "contents": [
-        {
-          "name": "Page A",
-          "slug": "page-a",
-          "lang": "en",
-          "ct": "markdown"
-        }
-      ],
-      "children": []
-    }
-  ]
+  "code": "termx-demo",
+  "names": {
+    "en": "TermX Demo"
+  }
 }
 ```
 
@@ -91,3 +99,31 @@ In the `__codegen` folder, run the following command:
 ```shell
 docker build -t docker.kodality.com/termx-jekyll-builder:latest .
 ```
+
+## Github Actions
+
+```yaml
+name: SSG
+
+on:
+  push:
+    branches: [ "main" ]
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build the Jekyll site
+        run: |
+          docker run \
+          -v ${{ github.workspace }}/__source:/__source -v ${{ github.workspace }}/_site:/template/_site  \
+          docker.kodality.com/termx-jekyll-builder /bin/bash -c "chmod -R 777 ./_generate.sh && ./_generate.sh"
+
+      - name: Upload _site
+        uses: actions/upload-artifact@v3
+        with:
+          name: _site
+          path: _site/**```

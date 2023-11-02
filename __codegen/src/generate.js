@@ -17,13 +17,14 @@ const _TARGET_ASSETS = `${_TARGET_FOLDER}/assets`;
 
 
 function readIndex() {
-  const indexJson = fileRead(`${_ROOT_FOLDER}/index.json`);
-  return JSON.parse(indexJson);
+  const pages = JSON.parse(fileRead(`${_ROOT_FOLDER}/pages.json`));
+  const space = JSON.parse(fileRead(`${_ROOT_FOLDER}/space.json`));
+  return {pages, space};
 }
 
 function getPages(index) {
   const flatten = (pages) => pages?.flatMap(p => [p, ...flatten(p.children)]) ?? []
-  return flatten(index.tree);
+  return flatten(index.pages);
 }
 
 function getUniqueContentLanguages(pages) {

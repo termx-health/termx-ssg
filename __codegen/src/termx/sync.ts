@@ -1,5 +1,5 @@
 import fs from 'fs';
-import {LocalizedName, Page, PageAttachment, PageLink, SearchResult, Space} from './models';
+import {Page, PageAttachment, PageLink, SearchResult, Space} from './models';
 
 
 if (!process.cwd().endsWith("__codegen")) {
@@ -8,7 +8,7 @@ if (!process.cwd().endsWith("__codegen")) {
 
 
 interface FileIndex {
-  space: LocalizedName,
+  space: Space,
   tree: FileDefinition[]
 }
 
@@ -125,7 +125,7 @@ HttpClient.build().then(async http => {
   const links = group((await http.get<SearchResult<PageLink>>(`${API_BASE}/page-links?spaceIds=${SPACE_ID}&limit=-1`)).data, l => l.targetId);
 
 
-  // check temp folder existance
+  // check temp folder existence
   const SOURCE_FOLDER = '../__source';
   folderCheck(`${SOURCE_FOLDER}`);
 
@@ -173,11 +173,12 @@ HttpClient.build().then(async http => {
     .sort((p1, p2) => links[p1.id].orderNumber - links[p2.id].orderNumber);
 
   const fileIndex: FileIndex = {
-    space: space.names,
+    space: space,
     tree: buildPages(0, collect(pagesSorted, p => p.links?.length ? p.links[0].sourceId : 0))
   }
 
-  fileWrite(`${SOURCE_FOLDER}/index.json`, JSON.stringify(fileIndex, null, 2));
+  fileWrite(`${SOURCE_FOLDER}/space.json`, JSON.stringify(fileIndex.space, null, 2));
+  fileWrite(`${SOURCE_FOLDER}/pages.json`, JSON.stringify(fileIndex.tree, null, 2));
 }).then(() => console.timeEnd())
 
 

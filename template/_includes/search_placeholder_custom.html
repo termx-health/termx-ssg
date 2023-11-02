@@ -1,8 +1,8 @@
-{% assign name = site.data.index.space[page.language] %}
+{% assign name = site.data.index.space.names[page.language] %}
 {% if name  %}
   Search {{ name }}
 {% else %}
-  {% for l in site.data.index.space | first %}
+  {% for l in site.data.index.space.names | first %}
    Search {{ l[1] }}
   {% endfor %}
 {% endif %}
