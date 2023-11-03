@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "dependencies": {
     "@kodality-web/marina-markdown-parser": "^15.0.0-snapshot",
-    "jsdom": "^22.1.0"
+    "jsdom": "^22.1.0",
+    "md5": "^2.3.0"
   },
   "scripts": {
     "generate": "node src/generate.js",
-    "sync": "npx tsc && node dist/sync.js",
+    "sync": "npx tsc && node dist/termx/sync.js",
     "magic": "npm run sync && npm run generate"
   },
   "devDependencies": {

@@ -39,6 +39,7 @@ function collect<K extends string | number | symbol, V, R = V>(
 
 
 // HTTP
+const WEB_BASE = 'https://termx.kodality.dev';
 const API_BASE = 'https://termx.kodality.dev/api';
 const ACCESS_TOKEN_URL = 'https://auth.kodality.dev/realms/terminology/protocol/openid-connect';
 const CLIENT_ID = 'term-service';
@@ -152,7 +153,7 @@ HttpClient.build().then(async http => {
     .sort((p1, p2) => p1.id - p2.id)
     .sort((p1, p2) => links[p1.id].orderNumber - links[p2.id].orderNumber);
 
-  const spaceIndex: SpaceIndex = {code: space.code, names: space.names};
+  const spaceIndex: SpaceIndex = {web: WEB_BASE, code: space.code, names: space.names};
   const pageIndex: PageIndex = buildPages(0, collect(pagesSorted, p => p.links?.length ? p.links[0].sourceId : 0))
 
   fileWrite(`${SOURCE_FOLDER}/space.json`, JSON.stringify(spaceIndex, null, 2));

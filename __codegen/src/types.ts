@@ -1,7 +1,8 @@
 // space.json
 interface SpaceIndex {
-  code?: string;
-  names?: {[lang: string]: string};
+  web: string
+  code: string;
+  names: {[lang: string]: string};
 }
 
 

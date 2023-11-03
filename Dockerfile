@@ -11,3 +11,6 @@ RUN gem install bundler
 COPY _generate.sh ./_generate.sh
 COPY __codegen ./__codegen
 COPY template/ ./template
+
+RUN cd __codegen && npm install
+RUN cd template && bundle install
