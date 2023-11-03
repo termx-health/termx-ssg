@@ -10,7 +10,7 @@ const folderCheck = p => !fs.existsSync(p) && fs.mkdirSync(p, {recursive: true})
 const folderCopy = (src, dest) => fs.cpSync(src, dest, {recursive: true});
 const fileRead = (p) => String(fs.readFileSync(p))
 const fileWrite = (p, file) => fs.writeFileSync(p, file, 'utf-8');
-const downloadFile = (async (url, path) => {
+const downloadFile = (async (path, url) => {
   const res = await fetch(url);
   const fileStream = fs.createWriteStream(path);
   await new Promise((resolve, reject) => {
@@ -87,50 +87,64 @@ async function main() {
 
 
   // initialize MarkdownParser
-  const mdPluginAssets = []
-  const mdParser = await parser.build({
+  const mdPluginAssets = [];
+  const mdPluginFiles = [];
+  const mdLocks = [];
+  const {parser: mdParser, finalize} = await parser.build({
     // url to TermX web
     webPath: index.space.web,
     // flat page array
     pages: pagesFlat,
+    // plantUML server
+    plantumlServer: 'https://www.plantuml.com/plantuml',
     // for plugins to download any file
     downloadFile: (filename, url) => mdPluginAssets.push({filename, url}),
-    // plantUML server
-    plantumlServer: 'https://www.plantuml.com/plantuml'
+    // for plugins to save any file
+    saveFile: (filename, content) => mdPluginFiles.push({filename, content}),
+    // for plugins to force client wait until they finished
+    setLock: lock => mdLocks.push(lock)
   });
 
-  // save transformed page content
-  for (const pageDef of pagesFlat) {
-    for (const content of pageDef['contents']) {
-      let extension = content.contentType === 'markdown' ? 'md' : 'html';
-      let pageContent = fileRead(`${_ROOT_FOLDER}/pages/${content.slug}.${extension}`);
+  try {
+    // save transformed page content
+    for (const pageDef of pagesFlat) {
+      for (const content of pageDef['contents']) {
+        let extension = content.contentType === 'markdown' ? 'md' : 'html';
+        let pageContent = fileRead(`${_ROOT_FOLDER}/pages/${content.slug}.${extension}`);
 
-      // font-matter
-      const frontMatter =
-        '---\n' +
-        `title: ${content.name}\n` +
-        `slug: ${content.slug}\n` +
-        `language: ${content.lang}\n` +
-        'langs:\n' +
-        `${pageDef.contents.map(({lang, slug}) =>
-          ` - key: ${lang}\n   value: ${slug}`).join('\n')}\n` +
-        `last_modified_date: ${content.modifiedAt}\n` +
-        '---\n';
+        // font-matter
+        const frontMatter =
+          '---\n' +
+          `title: ${content.name}\n` +
+          `slug: ${content.slug}\n` +
+          `language: ${content.lang}\n` +
+          'langs:\n' +
+          `${pageDef.contents.map(({lang, slug}) =>
+            ` - key: ${lang}\n   value: ${slug}`).join('\n')}\n` +
+          `last_modified_date: ${content.modifiedAt}\n` +
+          '---\n';
 
-      // content
-      if (extension === 'md') {
-        pageContent = await mdParser.render(pageContent)
-        extension = 'html';
+        // content
+        if (extension === 'md') {
+          pageContent = await mdParser.render(pageContent)
+          extension = 'html';
+        }
+
+        // save page content in '_wiki/(en|**)' folder
+        fileWrite(`${_TARGET_WIKI}/${content.lang}/${content.slug}.${extension}`,
+          frontMatter +
+          '\n{% raw %}\n' +
+          pageContent +
+          '\n{% endraw %}'
+        );
       }
-
-      // save page content in '_wiki/(en|**)' folder
-      fileWrite(`${_TARGET_WIKI}/${content.lang}/${content.slug}.${extension}`,
-        frontMatter +
-        '\n{% raw %}\n' +
-        pageContent +
-        '\n{% endraw %}'
-      );
     }
+
+    if (mdLocks.length) {
+      await Promise.allSettled(mdLocks);
+    }
+  } finally {
+    await finalize()
   }
 
 
@@ -144,7 +158,10 @@ async function main() {
     // generated
     folderCheck(`${_TARGET_ASSETS}/generated`);
     for (const ass of mdPluginAssets) {
-      await downloadFile(ass.url, `${_TARGET_ASSETS}/generated/${ass.filename}`);
+      await downloadFile(`${_TARGET_ASSETS}/generated/${ass.filename}`, ass.url);
+    }
+    for (const ass of mdPluginFiles) {
+      fileWrite(`${_TARGET_ASSETS}/generated/${ass.filename}`, ass.content)
     }
   } catch (e) {
     console.log("Failed to copy assets!", e);

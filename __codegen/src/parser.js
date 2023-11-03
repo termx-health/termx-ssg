@@ -1,4 +1,5 @@
 const md5 = require("md5");
+const {join} = require('path');
 
 // fake DOM
 const jsdom = require("jsdom");
@@ -6,13 +7,28 @@ const DOM = new jsdom.JSDOM();
 const DOCUMENT = DOM.window.document;
 const CONTAINER = DOCUMENT.createElement('div');
 
+async function requireBrowser() {
+  if (this['__puppeteer-browser']) {
+    return this['__puppeteer-browser']
+  }
+  const puppeteer = await import("puppeteer");
+  return this['__puppeteer-browser'] = await puppeteer.launch({
+    executablePath: 'google-chrome-stable',
+    headless: "new",
+    args: ["--no-sandbox", "--disable-extensions", "--disable-setuid-sandbox"],
+    cacheDirectory: join(__dirname, '.cache', 'puppeteer'),
+  });
+}
+
 module.exports = {
   /**
    * @param mdOptions {{
    *  webPath: string,
    *  pages: import('types').PageDefinition[],
+   *  plantumlServer: string,
    *  downloadFile: (filename: string, url: string) => void,
-   *  plantumlServer: string
+   *  saveFile: (filename: string, content: string) => void,
+   *  setLock: (lock: Promise) => void,
    * }}
    */
   build: async (mdOptions) => {
@@ -23,8 +39,14 @@ module.exports = {
     parser.use({plugin: localImagePlugin()})
     parser.use({plugin: localLinkPlugin({web: mdOptions.webPath, pages: mdOptions.pages})})
     parser.use({plugin: umlPlugin({downloadFile: mdOptions.downloadFile})})
+    parser.use({plugin: await mermaidPlugin({saveFile: mdOptions.saveFile, setLock: mdOptions.setLock})})
     parser.use({plugin: await drawioPlugin()})
-    return parser
+
+    const finalize = async () => {
+      await requireBrowser().then(b => b.close());
+    }
+
+    return {parser, finalize}
   }
 }
 
@@ -140,6 +162,68 @@ function localLinkPlugin(opts) {
 }
 
 /**
+ * PlantUML plugin
+ *
+ * @param opts {{downloadFile: (filename: string, url: string) => void}}
+ */
+function umlPlugin(opts) {
+  const {downloadFile} = opts;
+
+  // markdown-it plugin
+  return (md) => {
+    md.renderer.rules.uml_diagram = function(tokens, idx, /* options, env, self */) {
+      const [url] = tokenAttrValue(tokens[idx], 'src');
+      const name = md5(url);
+      downloadFile(`${name}.svg`, url)
+      return `<img class="drawio" src="/assets/generated/${name}.svg">`;
+    };
+  }
+}
+
+/**
+ * Mermaid plugin
+ *
+ * @param opts {{saveFile: (filename: string, content: string) => void, setLock: (promise: Promise) => void}}
+ */
+async function mermaidPlugin(opts) {
+  const _matchSection = await matchSection();
+  const {saveFile, setLock} = opts;
+
+  const browser = await requireBrowser();
+  const mermaidCli = await import("@mermaid-js/mermaid-cli");
+
+
+  const hash = (data) => md5(data)
+
+  return (md) => {
+    md.renderer.rules.mermaid = (tokens, idx, /* options, env, self */) => {
+      const [data] = tokenAttrValue(tokens[idx], 'data');
+      return `<img class="drawio" src="/assets/generated/${hash(data)}.svg">`;
+    };
+
+    md.block.ruler.before('fence', 'mermaid', (state, startl, endl, silent) => {
+      const {failed, end, autoClosed, content} = _matchSection('```mermaid', '```', state, startl, endl, silent);
+      if (failed) {
+        return false;
+      }
+      const data = content?.match(/```mermaid\n?([\W\w]*)\n?```/)?.[1];
+      if (!data) {
+        return false;
+      }
+
+      setLock(mermaidCli.renderMermaid(browser, data, 'svg')
+        .then(r => r.data)
+        .then(r => saveFile(`${hash(data)}.svg`, String(r))));
+
+      const token = state.push('mermaid', '', 0);
+      token.attrs = [['data', data]];
+      state.line = end.line + (autoClosed ? 1 : 0);
+      return true;
+    });
+  }
+}
+
+/**
  * DrawIO plugin
  */
 async function drawioPlugin() {
@@ -157,35 +241,14 @@ async function drawioPlugin() {
       if (failed) {
         return false;
       }
-
       const base64 = content.match(/```drawio\n?(.+)\n?```/)?.[1];
       if (!base64) {
         return false;
       }
-
       const token = state.push('drawio', '', 0);
       token.attrs = [['data', base64]];
       state.line = end.line + (autoClosed ? 1 : 0);
       return true;
     });
-  }
-}
-
-/**
- * PlantUML plugin
- *
- * @param opts {{downloadFile: (filename: string, url: string) => void}}
- */
-function umlPlugin(opts) {
-  const {downloadFile} = opts;
-
-  // markdown-it plugin
-  return (md) => {
-    md.renderer.rules.uml_diagram = function(tokens, idx, options, env, self) {
-      const [url] = tokenAttrValue(tokens[idx], 'src');
-      const name = md5(url);
-      downloadFile(`${name}.svg`, url)
-      return `<img class="drawio" src="/assets/generated/${name}.svg">`;
-    };
   }
 }
