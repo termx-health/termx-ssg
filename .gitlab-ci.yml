@@ -8,7 +8,8 @@ release snapshot:
   before_script:
     - docker login -u $KODALITY_NEXUS_USER -p $KODALITY_NEXUS_PASSWORD docker.kodality.com
   script:
-    - docker build -t docker.kodality.com/termx-jekyll-builder:latest --push .
+    - docker build -t docker.kodality.com/termx-jekyll-builder:latest .
+    - docker push docker.kodality.com/termx-jekyll-builder
   only:
     - main
     - master
