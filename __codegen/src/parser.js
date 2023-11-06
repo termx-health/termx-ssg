@@ -74,6 +74,7 @@ function tokenAttrValue(token, attr) {
  * Image plugin
  */
 function localImagePlugin() {
+  // markdown-it plugin
   return (md) => {
     // matches "files/:pageId/:fileName"
     const filesRe = /^files\/(\d*)\/(.+)/;
@@ -158,6 +159,8 @@ function localLinkPlugin(opts) {
       const [val, setVal] = tokenAttrValue(tokens[idx], 'href');
       if (val.includes(':')) {
         setVal(processHref(val, opts));
+      } else if (val.startsWith('/')) {
+        setVal(`${web}${val}`)
       }
       return renderer(tokens, idx, options, env, self);
     };
@@ -200,6 +203,7 @@ async function mermaidPlugin(opts) {
 
   const hash = (data) => md5(data)
 
+  // markdown-it plugin
   return (md) => {
     md.renderer.rules.mermaid = (tokens, idx, /* options, env, self */) => {
       const [data] = tokenAttrValue(tokens[idx], 'data');
