@@ -12,7 +12,7 @@ async function requireBrowser() {
     return this['__puppeteer-browser']
   }
   const puppeteer = await import("puppeteer");
-  return this['__puppeteer-browser'] = await puppeteer.launch({
+  return this['__puppeteer-browser'] = puppeteer.launch({
     executablePath: 'google-chrome-stable',
     headless: "new",
     args: ["--no-sandbox", "--disable-extensions", "--disable-setuid-sandbox"],
@@ -23,12 +23,12 @@ async function requireBrowser() {
 module.exports = {
   /**
    * @param mdOptions {{
-   *  webPath: string,
-   *  pages: import('types').PageDefinition[],
-   *  plantumlServer: string,
-   *  downloadFile: (filename: string, url: string) => void,
-   *  saveFile: (filename: string, content: string) => void,
-   *  setLock: (lock: Promise) => void,
+   *    webPath: string,
+   *    pages: import('types').PageDefinition[],
+   *    plantumlServer: string,
+   *    downloadFile: (filename: string, url: string) => void,
+   *    saveFile: (filename: string, content: string) => void,
+   *    setLock: (lock: Promise) => void,
    * }}
    */
   build: async (mdOptions) => {
@@ -97,7 +97,10 @@ function localImagePlugin() {
 /**
  * Link plugin
  *
- * @param opts {{web: string, pages: import('types').PageDefinition[]}}
+ * @param opts {{
+ *    web: string,
+ *    pages: import('types').PageDefinition[]
+ * }}
  */
 function localLinkPlugin(opts) {
   const {web, pages} = opts;
@@ -183,7 +186,10 @@ function umlPlugin(opts) {
 /**
  * Mermaid plugin
  *
- * @param opts {{saveFile: (filename: string, content: string) => void, setLock: (promise: Promise) => void}}
+ * @param opts {{
+ *    saveFile: (filename: string, content: string) => void,
+ *    setLock: (promise: Promise) => void
+ * }}
  */
 async function mermaidPlugin(opts) {
   const _matchSection = await matchSection();
@@ -191,7 +197,6 @@ async function mermaidPlugin(opts) {
 
   const browser = await requireBrowser();
   const mermaidCli = await import("@mermaid-js/mermaid-cli");
-
 
   const hash = (data) => md5(data)
 
@@ -211,9 +216,10 @@ async function mermaidPlugin(opts) {
         return false;
       }
 
-      setLock(mermaidCli.renderMermaid(browser, data, 'svg')
+      setLock(mermaidCli
+        .renderMermaid(browser, data, 'svg')
         .then(r => r.data)
-        .then(r => saveFile(`${hash(data)}.svg`, String(r))));
+        .then(d => saveFile(`${hash(data)}.svg`, String(d))));
 
       const token = state.push('mermaid', '', 0);
       token.attrs = [['data', data]];

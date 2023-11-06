@@ -24,7 +24,9 @@
           <span class="nav-list-link__lang">{{ first_node.lang }}</span></a>
       {% endif %}
 
-      {% include nav/site_nav_item.liquid pages=pg.children language=lang %}
+      {% if pg.children %}
+        {% include nav/site_nav_item.liquid pages=pg.children language=lang %}
+      {% endif %}
     </li>
   {%- endfor -%}
 </ul>
