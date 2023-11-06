@@ -12,3 +12,4 @@ release snapshot:
     - docker buildx build --platform linux/amd64,linux/arm64 -t docker.kodality.com/termx-jekyll-builder:latest --push .
   only:
     - main
+    - master
