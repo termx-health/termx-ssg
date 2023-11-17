@@ -1,16 +1,17 @@
 {
   "name": "codegen",
   "version": "1.0.0",
-  "dependencies": {
-    "@kodality-web/marina-markdown-parser": "^15.0.0-snapshot",
-    "@mermaid-js/mermaid-cli": "^10.6.0",
-    "jsdom": "^22.1.0",
-    "md5": "^2.3.0"
-  },
   "scripts": {
     "generate": "node src/generate.js",
     "sync": "npx tsc && node dist/termx/sync.js",
     "magic": "npm run sync && npm run generate"
+  },
+  "dependencies": {
+    "@kodality-web/marina-markdown-parser": "^15.0.0-snapshot",
+    "@kodality-web/structure-definition-viewer": "5.0.3",
+    "@mermaid-js/mermaid-cli": "^10.6.0",
+    "jsdom": "^22.1.0",
+    "md5": "^2.3.0"
   },
   "devDependencies": {
     "@types/node": "^20.8.9",

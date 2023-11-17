@@ -21,6 +21,7 @@ export class Page {
   public code?: string;
   public contents?: PageContent[];
   public links?: PageLink[];
+  public relations?: PageRelation[];
 }
 
 export class PageContent {
@@ -46,4 +47,16 @@ export class PageAttachment {
   public fileId?: string;
   public fileName?: string;
   public contentType?: string;
+}
+
+export class PageRelation {
+  public id?: number;
+  public pageId?: number;
+  public spaceId?: number;
+  public content?: {
+    code?: string;
+    names?: LocalizedName;
+  };
+  public target?: string;
+  public type?: string;
 }

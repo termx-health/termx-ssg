@@ -99,6 +99,10 @@ class HttpClient {
 console.time()
 HttpClient.build().then(async http => {
   const SPACE_ID = 8211114;
+  const _ROOT_FOLDER = `../__source`;
+  const _ROOT_ATTACHMENTS = `${_ROOT_FOLDER}/attachments`;
+  const _ROOT_PAGES = `${_ROOT_FOLDER}/pages`;
+  const _ROOT_RESOURCES = `${_ROOT_FOLDER}/resources`;
 
   // load resources
   const space = await http.get<Space>(`${API_BASE}/spaces/${SPACE_ID}`);
@@ -107,15 +111,14 @@ HttpClient.build().then(async http => {
 
 
   // check temp folder existence
-  const SOURCE_FOLDER = '../__source';
-  folderCheck(`${SOURCE_FOLDER}`);
+  folderCheck(_ROOT_FOLDER);
 
 
   // STEP (pages/**): save page contents
   const pagesGrouped = group(pages.flatMap(p => p.contents), c => c.slug);
-  folderCheck(`${SOURCE_FOLDER}/pages`)
+  folderCheck(_ROOT_PAGES)
   for (const pc of Object.values(pagesGrouped)) {
-    fileWrite(`${SOURCE_FOLDER}/pages/${pc.slug}.${pc.contentType === 'markdown' ? 'md' : 'html'}`, pc.content);
+    fileWrite(`${_ROOT_PAGES}/${pc.slug}.${pc.contentType === 'markdown' ? 'md' : 'html'}`, pc.content);
   }
 
 
@@ -138,13 +141,50 @@ HttpClient.build().then(async http => {
   });
 
 
-  folderCheck(`${SOURCE_FOLDER}/attachments`)
+  folderCheck(_ROOT_ATTACHMENTS)
   for (const attachments of await Promise.all(pageAttachments)) {
     for (const att of attachments) {
       const buffer = Buffer.from(await (att.blob as Blob).arrayBuffer());
-      folderCheck(`${SOURCE_FOLDER}/attachments/${att.pageId}`)
-      fileWrite(`${SOURCE_FOLDER}/attachments/${att.pageId}/${att.fileName}`, buffer);
+      folderCheck(`${_ROOT_ATTACHMENTS}/${att.pageId}`)
+      fileWrite(`${_ROOT_ATTACHMENTS}/${att.pageId}/${att.fileName}`, buffer);
     }
+  }
+
+  // STEP (resources/**)
+  const pageResources: Promise<{
+    type: 'structure-definition' | string,
+    resourceId: string,
+    content: string,
+    extension: 'json' | string
+  }>[] = pages.flatMap(p => {
+    return p.relations.map(async rel => {
+      if (rel.type === 'def') {
+        const {data} = await http.get<SearchResult<{
+          contentFormat: 'json' | 'fsh',
+          content: string
+        }>>(`${API_BASE}/structure-definitions?code=${rel.target}&limit=1`)
+
+        const sd = data[0]
+        if (sd.contentFormat === 'json') {
+          return {
+            type: 'structure-definition',
+            resourceId: rel.target,
+            content: sd.content,
+            extension: 'json'
+          }
+        }
+
+        console.log(`SD ${rel.target} has "${sd.contentFormat}" content format, skipping!`)
+      } else {
+        console.log(`Unknown "${rel.type}" resource type, skipping!`)
+      }
+    });
+  })
+
+  folderCheck(_ROOT_RESOURCES)
+  for (const res of (await Promise.all(pageResources)).filter(Boolean)) {
+    folderCheck(`${_ROOT_RESOURCES}/${res.type}`)
+    fileWrite(`${_ROOT_RESOURCES}/${res.type}/${res.resourceId}.${res.extension}`, res.content);
   }
 
 
@@ -156,8 +196,8 @@ HttpClient.build().then(async http => {
   const spaceIndex: SpaceIndex = {web: WEB_BASE, code: space.code, names: space.names};
   const pageIndex: PageIndex = buildPages(0, collect(pagesSorted, p => p.links?.length ? p.links[0].sourceId : 0))
 
-  fileWrite(`${SOURCE_FOLDER}/space.json`, JSON.stringify(spaceIndex, null, 2));
-  fileWrite(`${SOURCE_FOLDER}/pages.json`, JSON.stringify(pageIndex, null, 2));
+  fileWrite(`${_ROOT_FOLDER}/space.json`, JSON.stringify(spaceIndex, null, 2));
+  fileWrite(`${_ROOT_FOLDER}/pages.json`, JSON.stringify(pageIndex, null, 2));
 }).then(() => console.timeEnd())
 
 
