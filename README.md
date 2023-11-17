@@ -4,7 +4,10 @@ Place files into the `__source` folder.
 
 ```
 ├── __source
-│   ├── attachments (optional)
+│   ├── resources
+│   │   ├── structure-definitions
+│   │   └── ...
+│   ├── attachments
 │   │   └── 101 (page ID)
 │   │       └── **.(png|jpg|jpeg|**)
 │   ├── pages

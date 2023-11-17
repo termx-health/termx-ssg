@@ -1,5 +1,17 @@
 const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const fs = require("fs");
+const {
+  _TARGET_DATA,
+  _TARGET_WIKI,
+  _TARGET_ASSETS,
+  _TARGET_ASSETS_FILES,
+  _TARGET_ASSETS_GENERATED,
+  _TARGET_ASSETS_RESOURCES,
+  _ROOT_FOLDER,
+  _ROOT_ATTACHMENTS,
+  _ROOT_PAGES,
+  _ROOT_RESOURCES
+} = require("./paths");
 
 if (!process.cwd().endsWith("__codegen")) {
   throw Error(`invalid cwd: ${process.cwd()}`)
@@ -19,12 +31,6 @@ const downloadFile = (async (path, url) => {
     fileStream.on("finish", resolve);
   });
 });
-
-const _ROOT_FOLDER = `../__source`;
-const _TARGET_FOLDER = '../template'
-const _TARGET_DATA = `${_TARGET_FOLDER}/_data`;
-const _TARGET_WIKI = `${_TARGET_FOLDER}/_wiki`;
-const _TARGET_ASSETS = `${_TARGET_FOLDER}/assets`;
 
 
 /**
@@ -87,7 +93,7 @@ async function main() {
 
 
   // initialize MarkdownParser
-  const mdPluginAssets = [];
+  const mdPluginAssets = []; // fixme: to download files, not 'assets'
   const mdPluginFiles = [];
   const mdLocks = [];
   const {parser: mdParser, finalize} = await parser.build({
@@ -97,6 +103,8 @@ async function main() {
     pages: pagesFlat,
     // plantUML server
     plantumlServer: 'https://www.plantuml.com/plantuml',
+    // FSH transformation server
+    chef: 'https://termx.kodality.dev/chef',
     // for plugins to download any file
     downloadFile: (filename, url) => mdPluginAssets.push({filename, url}),
     // for plugins to save any file
@@ -105,12 +113,13 @@ async function main() {
     setLock: lock => mdLocks.push(lock)
   });
 
+
   try {
     // save transformed page content
     for (const pageDef of pagesFlat) {
       for (const content of pageDef['contents']) {
         let extension = content.contentType === 'markdown' ? 'md' : 'html';
-        let pageContent = fileRead(`${_ROOT_FOLDER}/pages/${content.slug}.${extension}`);
+        let pageContent = fileRead(`${_ROOT_PAGES}/${content.slug}.${extension}`);
 
         // font-matter
         const frontMatter =
@@ -149,22 +158,42 @@ async function main() {
 
 
   // STEP 3:
-  // copy assets
+  // copy attachments
   try {
-    // uploaded
-    folderCheck(`${_TARGET_ASSETS}`);
-    folderCopy(`${_ROOT_FOLDER}/attachments`, `${_TARGET_ASSETS}/files`);
+    folderCheck(_TARGET_ASSETS);
+    folderCopy(_ROOT_ATTACHMENTS, _TARGET_ASSETS_FILES);
+  } catch (e) {
+    console.log("Failed to copy attachments!", e);
+  }
 
-    // generated
-    folderCheck(`${_TARGET_ASSETS}/generated`);
-    for (const ass of mdPluginAssets) {
-      await downloadFile(`${_TARGET_ASSETS}/generated/${ass.filename}`, ass.url);
-    }
+  // copy generated files
+  try {
+    folderCheck(_TARGET_ASSETS_GENERATED);
     for (const ass of mdPluginFiles) {
-      fileWrite(`${_TARGET_ASSETS}/generated/${ass.filename}`, ass.content)
+      fileWrite(`${_TARGET_ASSETS_GENERATED}/${ass.filename}`, ass.content)
+    }
+    for (const ass of mdPluginAssets) {
+      await downloadFile(`${_TARGET_ASSETS_GENERATED}/${ass.filename}`, ass.url);
     }
   } catch (e) {
-    console.log("Failed to copy assets!", e);
+    console.log("Failed to copy generated files!", e);
+  }
+
+  // copy resources
+  try {
+    folderCheck(_TARGET_ASSETS_RESOURCES);
+    folderCopy(_ROOT_RESOURCES, _TARGET_ASSETS_RESOURCES)
+  } catch (e) {
+    console.log("Failed to copy resources!", e);
+  }
+
+  // copy NPM installed version into JS assets folder
+  try {
+    const FSDV_PATH = 'node_modules/@kodality-web/structure-definition-viewer/dist/structure-definition-viewer.js'
+    const FSDV = fileRead(FSDV_PATH);
+    fileWrite(`${_TARGET_ASSETS}/js/fhir-structure-definition-viewer.js`, FSDV);
+  } catch (e) {
+    console.log("Failed to copy @kodality-web/structure-definition-viewer!", e);
   }
 
   console.timeEnd();

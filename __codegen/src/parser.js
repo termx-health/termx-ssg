@@ -1,24 +1,17 @@
 const md5 = require("md5");
 const {join} = require('path');
-
+const {
+  _TARGET_ASSETS_FILES,
+  _TARGET_ASSETS_GENERATED,
+  _TARGET_ASSETS_RESOURCES,
+  abs
+} = require("./paths");
 // fake DOM
 const jsdom = require("jsdom");
 const DOM = new jsdom.JSDOM();
 const DOCUMENT = DOM.window.document;
 const CONTAINER = DOCUMENT.createElement('div');
 
-async function requireBrowser() {
-  if (this['__puppeteer-browser']) {
-    return this['__puppeteer-browser']
-  }
-  const puppeteer = await import("puppeteer");
-  return this['__puppeteer-browser'] = puppeteer.launch({
-    executablePath: 'google-chrome-stable',
-    headless: "new",
-    args: ["--no-sandbox", "--disable-extensions", "--disable-setuid-sandbox"],
-    cacheDirectory: join(__dirname, '.cache', 'puppeteer'),
-  });
-}
 
 module.exports = {
   /**
@@ -26,6 +19,7 @@ module.exports = {
    *    webPath: string,
    *    pages: import('types').PageDefinition[],
    *    plantumlServer: string,
+   *    chef: string,
    *    downloadFile: (filename: string, url: string) => void,
    *    saveFile: (filename: string, content: string) => void,
    *    setLock: (lock: Promise) => void,
@@ -41,6 +35,8 @@ module.exports = {
     parser.use({plugin: umlPlugin({downloadFile: mdOptions.downloadFile})})
     parser.use({plugin: await mermaidPlugin({saveFile: mdOptions.saveFile, setLock: mdOptions.setLock})})
     parser.use({plugin: await drawioPlugin()})
+    parser.use({plugin: await structureDefinitionFSHPlugin({chefUrl: mdOptions.chef, saveFile: mdOptions.saveFile, setLock: mdOptions.setLock})})
+    parser.use({plugin: await structureDefinitionCodePlugin()})
 
     const finalize = async () => {
       await requireBrowser().then(b => b.close());
@@ -52,6 +48,10 @@ module.exports = {
 
 
 // utils
+
+function hash(data) {
+  return md5(data);
+}
 
 function matchSection() {
   return import('@kodality-web/marina-markdown-parser').then(pack => pack.matchSection)
@@ -69,6 +69,21 @@ function tokenAttrValue(token, attr) {
   }];
 }
 
+async function requireBrowser() {
+  if (this['__puppeteer-browser']) {
+    return this['__puppeteer-browser']
+  }
+  const puppeteer = await import("puppeteer");
+  return this['__puppeteer-browser'] = puppeteer.launch({
+    executablePath: 'google-chrome-stable',
+    headless: "new",
+    args: ["--no-sandbox", "--disable-extensions", "--disable-setuid-sandbox"],
+    cacheDirectory: join(__dirname, '.cache', 'puppeteer'),
+  });
+}
+
+
+// plugins
 
 /**
  * Image plugin
@@ -81,7 +96,7 @@ function localImagePlugin() {
 
     const filesLink = (url) => {
       const [_, id, name] = url.match(filesRe);
-      return `/assets/files/${id}/${name}`;
+      return `${abs(_TARGET_ASSETS_FILES)}${id}/${name}`;
     };
 
     const defaultRender = md.renderer.rules.image;
@@ -177,11 +192,11 @@ function umlPlugin(opts) {
 
   // markdown-it plugin
   return (md) => {
-    md.renderer.rules.uml_diagram = function(tokens, idx, /* options, env, self */) {
+    md.renderer.rules.uml_diagram = function(tokens, idx) {
       const [url] = tokenAttrValue(tokens[idx], 'src');
       const name = md5(url);
       downloadFile(`${name}.svg`, url)
-      return `<img class="drawio" src="/assets/generated/${name}.svg">`;
+      return `<img class="drawio" src="${abs(_TARGET_ASSETS_GENERATED)}/${name}.svg">`;
     };
   }
 }
@@ -201,13 +216,12 @@ async function mermaidPlugin(opts) {
   const browser = await requireBrowser();
   const mermaidCli = await import("@mermaid-js/mermaid-cli");
 
-  const hash = (data) => md5(data)
 
   // markdown-it plugin
   return (md) => {
-    md.renderer.rules.mermaid = (tokens, idx, /* options, env, self */) => {
+    md.renderer.rules.mermaid = (tokens, idx) => {
       const [data] = tokenAttrValue(tokens[idx], 'data');
-      return `<img class="drawio" src="/assets/generated/${hash(data)}.svg">`;
+      return `<img class="drawio" src="${abs(_TARGET_ASSETS_GENERATED)}${hash(data)}.svg">`;
     };
 
     md.block.ruler.before('fence', 'mermaid', (state, startl, endl, silent) => {
@@ -220,14 +234,17 @@ async function mermaidPlugin(opts) {
         return false;
       }
 
+      // create MD token
+      const token = state.push('mermaid', '', 0);
+      token.attrs = [['data', data]];
+      state.line = end.line + (autoClosed ? 1 : 0);
+
+      // render diagram using Mermaid CLI
       setLock(mermaidCli
         .renderMermaid(browser, data, 'svg')
         .then(r => r.data)
         .then(d => saveFile(`${hash(data)}.svg`, String(d))));
 
-      const token = state.push('mermaid', '', 0);
-      token.attrs = [['data', data]];
-      state.line = end.line + (autoClosed ? 1 : 0);
       return true;
     });
   }
@@ -241,7 +258,7 @@ async function drawioPlugin() {
 
   // markdown-it plugin
   return (md) => {
-    md.renderer.rules.drawio = (tokens, idx, /* options, env, self */) => {
+    md.renderer.rules.drawio = (tokens, idx) => {
       const [base64] = tokenAttrValue(tokens[idx], 'data');
       return `<div><img class="drawio" src="data:image/svg+xml;base64, ${base64}"></div>`;
     };
@@ -257,6 +274,95 @@ async function drawioPlugin() {
       }
       const token = state.push('drawio', '', 0);
       token.attrs = [['data', base64]];
+      state.line = end.line + (autoClosed ? 1 : 0);
+      return true;
+    });
+  }
+}
+
+/**
+ * StructureDefinition FSH plugin
+
+ * @see /template/assets/js/fsdv-wrapper.js
+ * Assumes:
+ * ```fsh
+ * FHS-shy content in the .md
+ * ```
+ *
+ * @param opts {{
+ *    chefUrl: string,
+ *    saveFile: (filename: string, content: string) => void,
+ *    setLock: (promise: Promise) => void
+ * }}
+ *
+ */
+async function structureDefinitionFSHPlugin(opts) {
+  const {saveFile, setLock, chefUrl} = opts;
+  const _matchSection = await matchSection();
+
+  return md => {
+    md.renderer.rules.structure_definition_fsh = (tokens, idx) => {
+      const [fsh] = tokenAttrValue(tokens[idx], 'fsh');
+      return `<div data-type="fsdv-placeholder" data-src="${abs(_TARGET_ASSETS_GENERATED)}/${hash(fsh)}.json"></div>`;
+    };
+
+    md.block.ruler.before('fence', 'structure_definition_fsh', (state, startl, endl, silent) => {
+      const {failed, end, autoClosed, content} = _matchSection('```fsh', '```', state, startl, endl, silent);
+      if (failed) {
+        return false;
+      }
+
+      // create MD token
+      const token = state.push('structure_definition_fsh', '', 0);
+      const fshContent = content.match(/```fsh(.*?)```/s)[1].replace(/^\n/, '');
+      token.attrs = [['fsh', fshContent]];
+      state.line = end.line + (autoClosed ? 1 : 0);
+
+      // transform FSH to JSON
+      setLock(fetch(`${chefUrl}/fsh2fhir`, {
+        method: 'POST',
+        body: JSON.stringify({fsh: fshContent}),
+        headers: {'Content-Type': 'application/json'}
+      })
+        .then(r => r.json())
+        .then(r => {
+          if (r['fhir'] && r['fhir'].length) {
+            return r['fhir'][0];
+          }
+          throw Error(`Failed to convert FSH to JSON: ${r['error'].map(e => e['message']).join('; ')}`)
+        })
+        .then(json => saveFile(`${hash(fshContent)}.json`, JSON.stringify(json, null, 2))))
+
+      return true;
+    });
+  }
+}
+
+/**
+ * StructureDefinition code plugin.
+ *
+ * @see /template/assets/js/fsdv-wrapper.js
+ * Assumes:
+ * 1. '{{def:structure-definition-code}}' in template
+ * 2. structure-definition-code.json in assets
+ */
+async function structureDefinitionCodePlugin() {
+  const _matchSection = await matchSection();
+
+  return md => {
+    md.renderer.rules.structure_definition_code = (tokens, idx) => {
+      const [code] = tokenAttrValue(tokens[idx], 'code');
+      return `<div data-type="fsdv-placeholder" data-src="${abs(_TARGET_ASSETS_RESOURCES)}/structure-definition/${code}.json"></div>`;
+    };
+
+    md.block.ruler.after('reference', 'structure_definition_code', (state, startl, endl, silent) => {
+      const {failed, end, autoClosed, content} = _matchSection('{{def:', '}}', state, startl, endl, silent);
+      if (failed) {
+        return false;
+      }
+
+      const token = state.push('structure_definition_code', '', 0);
+      token.attrs = [['code', content.match(/{{def:(.*)}}/)[1]]];
       state.line = end.line + (autoClosed ? 1 : 0);
       return true;
     });
