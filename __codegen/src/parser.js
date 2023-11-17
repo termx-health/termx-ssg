@@ -221,7 +221,7 @@ async function mermaidPlugin(opts) {
   return (md) => {
     md.renderer.rules.mermaid = (tokens, idx) => {
       const [data] = tokenAttrValue(tokens[idx], 'data');
-      return `<img class="drawio" src="${abs(_TARGET_ASSETS_GENERATED)}${hash(data)}.svg">`;
+      return `<img class="drawio" src="${abs(_TARGET_ASSETS_GENERATED)}/${hash(data)}.svg">`;
     };
 
     md.block.ruler.before('fence', 'mermaid', (state, startl, endl, silent) => {
