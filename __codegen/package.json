@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@kodality-web/marina-markdown-parser": "^15.0.0-snapshot",
-    "@kodality-web/structure-definition-viewer": "5.0.4",
+    "@kodality-web/structure-definition-viewer": "5.0.5",
     "@mermaid-js/mermaid-cli": "^10.6.0",
     "jsdom": "^22.1.0",
     "md5": "^2.3.0"
