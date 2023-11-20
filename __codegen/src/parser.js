@@ -96,7 +96,7 @@ function localImagePlugin() {
 
     const filesLink = (url) => {
       const [_, id, name] = url.match(filesRe);
-      return `${abs(_TARGET_ASSETS_FILES)}${id}/${name}`;
+      return `${abs(_TARGET_ASSETS_FILES)}/${id}/${name}`;
     };
 
     const defaultRender = md.renderer.rules.image;
