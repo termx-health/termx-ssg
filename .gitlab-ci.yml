@@ -19,6 +19,7 @@ release tag:
   before_script:
     - docker login -u $KODALITY_NEXUS_USER -p $KODALITY_NEXUS_PASSWORD docker.kodality.com
   script:
+    - export APP_VERSION="$CI_COMMIT_REF_NAME"
     - docker build -t docker.kodality.com/termx-jekyll-builder:$APP_VERSION .
     - docker push docker.kodality.com/termx-jekyll-builder
   only:
