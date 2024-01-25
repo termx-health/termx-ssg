@@ -1,16 +1,19 @@
-_site
 .sass-cache
 .jekyll-cache
 .jekyll-metadata
 vendor
 
-
 .idea
-_ig
-assets/files
-_wiki
-_data
-__codegen/sources
 **/dist
 **/node_modules
+
+__codegen/sources
+_site
+_wiki
+_data
+template/assets/files
+template/assets/generated
+template/assets/resources
+template/assets/js/fhir-structure-definition-viewer.js
+__source
 

@@ -3,7 +3,7 @@ image: docker:latest
 stages:
   - release
 
-release snapshot:
+release latest:
   stage: release
   before_script:
     - docker login -u $KODALITY_NEXUS_USER -p $KODALITY_NEXUS_PASSWORD docker.kodality.com
@@ -13,3 +13,15 @@ release snapshot:
   only:
     - main
     - master
+
+release tag:
+  stage: release
+  before_script:
+    - docker login -u $KODALITY_NEXUS_USER -p $KODALITY_NEXUS_PASSWORD docker.kodality.com
+  script:
+    - docker build -t docker.kodality.com/termx-jekyll-builder:$APP_VERSION .
+    - docker push docker.kodality.com/termx-jekyll-builder
+  only:
+    - /^\d*\.\d*\.\d*$/
+  except:
+    - branches

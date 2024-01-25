@@ -165,7 +165,7 @@ HttpClient.build().then(async http => {
         }>>(`${API_BASE}/structure-definitions?code=${rel.target}&limit=1`)
 
         const sd = data[0]
-        if (sd.contentFormat === 'json') {
+        if (sd?.contentFormat === 'json') {
           return {
             type: 'structure-definition',
             resourceId: rel.target,
@@ -174,7 +174,7 @@ HttpClient.build().then(async http => {
           }
         }
 
-        console.log(`SD ${rel.target} has "${sd.contentFormat}" content format, skipping!`)
+        console.log(`SD ${rel.target} has "${sd?.contentFormat || 'unknown'}" content format, skipping!`)
       } else {
         console.log(`Unknown "${rel.type}" resource type, skipping!`)
       }
